@@ -8,15 +8,27 @@ unsigned char pwm[16] = {
 	0, 1, 1, 2, 3, 4, 5, 8, 12, 16, 22, 32, 45, 64, 91, 127
 };
 
+unsigned char ee_red EEMEM;
+unsigned char ee_green EEMEM;
+unsigned char ee_yellow EEMEM;
+
+static unsigned char safe_read(unsigned char *ptr)
+{
+	unsigned char tmp = eeprom_read_byte(ptr);
+	if (tmp >= 16)
+		return 15;
+	return tmp;
+}
+
 int main (void)
 {
 
 	unsigned char cur = 0, btn = 0, skip = 0;
 	unsigned char red, green, yellow;
 
-	red = 3;
-	yellow = 15;
-	green = 15;
+	red = safe_read(&ee_red);
+	yellow = safe_read(&ee_yellow);
+	green = safe_read(&ee_green);
 
 	/* run at 8 MHz */
 	CLKPR = _BV(CLKPCE);
@@ -58,16 +70,19 @@ int main (void)
 						green = (green + 1) % 16;
 						if (green == 15)
 							skip = 10;
+						eeprom_write_byte(&ee_green, green);
 					}
 					if (~PINB & _BV(PB1)) {
 						yellow = (yellow + 1) % 16;
 						if (yellow == 15)
 							skip = 10;
+						eeprom_write_byte(&ee_yellow, yellow);
 					}
 					if (~PINB & _BV(PB2)) {
 						red = (red + 1) % 16;
 						if (red == 15)
 							skip = 10;
+						eeprom_write_byte(&ee_red, red);
 					}
 				}
 			}
