@@ -27,6 +27,10 @@ int main (void)
 	yellow = 15;
 	green = 15;
 
+	/* watchdog reset after ~8 seconds */
+	MCUSR = 0;
+	WDTCSR = _BV(WDE) | _BV(WDP3) | _BV(WDP0);
+
 	/* in / out */
 	DDRD = _BV(DDD2) | _BV(DDD3) | _BV(DDD4) | _BV(DDD5);
 	DDRB = 0;
@@ -47,6 +51,7 @@ int main (void)
 		if (cur == 0) {
 			PORTD |= _BV(PD2) | _BV(PD3) | _BV(PD4);
 			if (++btn == 16) {
+				asm("wdr");
 				btn = 0;
 				if (~PINB & _BV(PB0)) {
 					green = (green + 1) % 16;
