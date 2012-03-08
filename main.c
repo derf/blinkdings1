@@ -43,7 +43,7 @@ static inline void handle_btn()
 			green--;
 		if (yellow < n_yellow)
 			yellow++;
-		if (yellow > n_yellow)
+		else if (yellow > n_yellow)
 			yellow--;
 	}
 
