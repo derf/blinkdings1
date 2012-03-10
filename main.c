@@ -14,7 +14,7 @@ unsigned char ee_yellow EEMEM;
 unsigned char ee_opmode EEMEM;
 
 enum {
-	OM_STATIC = 0, OM_QFADE = 1, OM_INVAL = 2,
+	OM_STATIC = 0, OM_QFADE, OM_RED, OM_INVAL
 } opmode;
 
 unsigned char red, green, yellow;
@@ -27,12 +27,26 @@ static unsigned char load_brightness(unsigned char *ptr)
 	return tmp;
 }
 
-static inline void handle_btn()
+static void setup_mode(void)
+{
+	switch (opmode) {
+		case OM_STATIC:
+			red = load_brightness(&ee_red);
+			yellow = load_brightness(&ee_yellow);
+			green = load_brightness(&ee_green);
+			break;
+		case OM_RED:
+			green = yellow = 0;
+			break;
+	}
+}
+
+static inline void handle_btn(void)
 {
 	static unsigned char n_red = 0, n_green = 0, n_yellow = 0;
 	static unsigned char btn = 0, skip = 0;
 
-	if ((opmode == OM_QFADE) && !(btn % 10)) {
+	if ((opmode == OM_QFADE) && !(btn % 12)) {
 		if (red < n_red)
 			red++;
 		else if (red > n_red)
@@ -45,6 +59,14 @@ static inline void handle_btn()
 			yellow++;
 		else if (yellow > n_yellow)
 			yellow--;
+	}
+	else if ((opmode == OM_RED) && !(btn % 12)) {
+		if (n_red && (red < 15))
+			red++;
+		else if (!n_red && (red > 0))
+			red--;
+		else
+			n_red = !n_red;
 	}
 
 	if (++btn == 200) {
@@ -68,9 +90,7 @@ static inline void handle_btn()
 
 				skip = 10;
 
-				red = load_brightness(&ee_red);
-				yellow = load_brightness(&ee_yellow);
-				green = load_brightness(&ee_green);
+				setup_mode();
 			}
 			else if (~PINB & _BV(PB0)) {
 				green = (green + 1) % 16;
@@ -120,13 +140,11 @@ int main (void)
 	TCCR0A = _BV(COM0B0) | _BV(WGM01); /* OC0B, count from 0 to OCR0A */
 	/* TCCR0B = _BV(CS01) | _BV(CS00); */ /* /64 prescaler */
 
-	red = load_brightness(&ee_red);
-	yellow = load_brightness(&ee_yellow);
-	green = load_brightness(&ee_green);
-
 	opmode = eeprom_read_byte(&ee_opmode);
 	if (opmode >= OM_INVAL)
 		opmode = OM_STATIC;
+
+	setup_mode();
 
 	while (1) {
 		if (++cur == 0) {
