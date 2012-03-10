@@ -62,9 +62,15 @@ static inline void handle_btn()
 		else {
 			if ((~PINB & _BV(PB0)) && (~PINB & _BV(PB2))) {
 				srand(red + green + yellow);
+
 				opmode = (opmode + 1) % OM_INVAL;
 				eeprom_write_byte(&ee_opmode, opmode);
+
 				skip = 10;
+
+				red = load_brightness(&ee_red);
+				yellow = load_brightness(&ee_yellow);
+				green = load_brightness(&ee_green);
 			}
 			else if (~PINB & _BV(PB0)) {
 				green = (green + 1) % 16;
