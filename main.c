@@ -14,7 +14,7 @@ unsigned char ee_yellow EEMEM;
 unsigned char ee_opmode EEMEM;
 
 enum {
-	OM_STATIC = 0, OM_QFADE, OM_RED, OM_INVAL
+	OM_STATIC = 0, OM_QFADE, OM_SFADE, OM_RED, OM_INVAL
 } opmode;
 
 unsigned char red, green, yellow;
@@ -45,8 +45,10 @@ static inline void handle_btn(void)
 {
 	static unsigned char n_red = 0, n_green = 0, n_yellow = 0;
 	static unsigned char btn = 0, skip = 0;
+	static unsigned char fade = 0;
 
-	if ((opmode == OM_QFADE) && !(btn % 12)) {
+	if (((opmode == OM_QFADE) && !(btn % 12))
+			|| ((opmode == OM_SFADE) && !(fade % 10) && !btn)) {
 		if (red < n_red)
 			red++;
 		else if (red > n_red)
@@ -77,6 +79,12 @@ static inline void handle_btn(void)
 			n_red = rand() % 16;
 			n_green = rand() % 16;
 			n_yellow = rand() % 16;
+		}
+		else if ((opmode == OM_SFADE) && (++fade == 160)) {
+			n_red = rand() % 8;
+			n_green = rand() % 16;
+			n_yellow = rand() % 16;
+			fade = 0;
 		}
 
 		if (skip)
